@@ -5,7 +5,7 @@ import client from '@/store/client'
 Vue.use(Vuex)
 
 export default new Vuex.Store({
-  modules: {
-    client
-  }
+    modules: {
+        client
+    }
 })

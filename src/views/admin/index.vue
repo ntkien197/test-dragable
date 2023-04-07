@@ -6,20 +6,22 @@
                     <div @click="handleSave" class="header-btn">Save</div>
                 </li>
                 <li>
-                    <div @click="onUndo" class="header-btn">Undo</div>
+                    <div @click="handleUndo" class="header-btn">Undo</div>
                 </li>
                 <li>
-                    <div @click="onRedo" class="header-btn">Redo</div>
+                    <div @click="handleRedo" class="header-btn">Redo</div>
                 </li>
                 <li>
                     <div class="header-btn">Export</div>
                 </li>
                 <li>
-                    <div @click="onImport" class="header-btn">Import</div>
+                    <div @click="handleImport" class="header-btn">Import</div>
                 </li>
                 <li>
                     <div class="header-btn">
-                        <router-link :to="{name:'consumer'}">View</router-link>
+                        <router-link :to="{name:'consumer'}">
+                            <span style="color: #fff">View</span>
+                        </router-link>
                     </div>
                 </li>
             </ul>
@@ -28,17 +30,18 @@
             <div class="main-sidebar">
                 <draggable
                     class="dragArea list-group"
-                    :list="list1"
+                    :list="listInput"
                     :group="{ name: 'people', pull: 'clone', put: false }"
                     :sort="false"
                     @start="onStartDrag"
+                    @end="onEndDrag"
                 >
                     <div
                         class="list-group-item"
-                        v-for="element in list1"
-                        :key="element.code"
+                        v-for="item in listInput"
+                        :key="item.code"
                     >
-                        {{ element.name }}
+                        {{ item.name }}
                     </div>
                 </draggable>
             </div>
@@ -47,26 +50,26 @@
                     <div class="">
                         <p>Mouse: ({{ mouseCoor.xAxis }} ,{{ mouseCoor.yAxis }})</p>
                         <p>Dragging: {{ dragging.component }}</p>
-                        <p>Instance: {{ list2.length }}</p>
+                        <p>Instance: {{ listOutput.length }}</p>
                         <p>Config: {{ currentItem || '' }}</p>
                     </div>
                     <draggable draggable=".item"
                                class="dragArea list-group"
-                               :list="list2"
+                               :list="listOutput"
                                group="people"
                                :sort="false"
                                @change="log"
                     >
-                        <template v-for="(i,index) in list2">
+                        <template v-for="(i,index) in listOutput">
                             <div :key="i.id" @click="onSelectedElement(i, index)">
-                                <template v-if="i.name == 'Button'">
+                                <template v-if="i.code == 'button'">
                                     <button>
                                         <span>
                                             {{ i.props.message || i.name }}
                                         </span>
                                     </button>
                                 </template>
-                                <template v-if="i.name == 'Paragraph'">
+                                <template v-if="i.code == 'paragraph'">
                                     <span>
                                         {{ i.props.message || i.name }}
                                     </span>
@@ -77,15 +80,15 @@
                     </draggable>
                 </div>
                 <div v-if="currentItem" class="main-body_input">
-                    <div v-if="currentItem.name == 'Paragraph'">
-                        <label>Message</label>
-                        <input v-model="list2[currentIndex].props.message" type="text">
+                    <div v-if="currentItem.code == 'paragraph'">
+                        <label>Content</label>
+                        <input v-model="listOutput[currentIndex].props.message" type="text">
                     </div>
-                    <div v-if="currentItem.name == 'Button'">
-                        <label>Nội dung</label>
-                        <input v-model="list2[currentIndex].props.name" type="text">
-                        <label>Message</label>
-                        <input v-model="list2[currentIndex].props.message" type="text">
+                    <div v-if="currentItem.code == 'button'">
+                        <label>Name</label>
+                        <input v-model="listOutput[currentIndex].props.message" type="text">
+                        <label>Alert</label>
+                        <input v-model="listOutput[currentIndex].props.alert" type="text">
                     </div>
                 </div>
             </div>
@@ -102,20 +105,21 @@ export default {
     },
     data() {
         return {
-            list1: [
+            listInput: [
                 {
                     name: 'Paragraph',
+                    code: 'paragraph',
                     component: 'ElementParagraph',
                     props: { message: '' }
                 },
                 {
                     name: 'Button',
+                    code: 'button',
                     component: 'ElementButton',
                     props: { alert: '', message: '' }
                 }
             ],
-            list2: [],
-            cloneList: [],
+            listOutput: [],
             mouseCoor: { xAxis: 0, yAxis: 0 },
             dragging: {},
             currentItem: {},
@@ -134,41 +138,44 @@ export default {
             const { _underlying_vm_ } = temp
             this.dragging = _underlying_vm_
         },
+        onEndDrag(evt) {
+            this.dragging = {}
+        },
         log(evt) {
             this.step++
-            this.historyList2[`step-${this.step}`] = [...this.list2]
+            this.historyList2[`step-${this.step}`] = [...this.listOutput]
         },
-        onUndo() {
-            if (!this.list2 || !this.list2.length) return alert('Nothing to undo')
+        handleUndo() {
+            if (!this.listOutput || !this.listOutput.length) return alert('Nothing to undo')
             let prevHistory = this.historyList2[`step-${this.step - 1}`]
 
             if (prevHistory && prevHistory.length) {
                 this.currentItem = {}
                 this.currentIndex = null
                 this.step--
-                return this.list2 = prevHistory
+                return this.listOutput = prevHistory
             }
 
-            return this.list2 = []
+            return this.listOutput = []
         },
-        onRedo() {
-            // if (!this.list2 || !this.list2.length) return alert('Nothing to redo')
+        handleRedo() {
+            if (!this.listOutput || !this.listOutput.length) return alert('Nothing to redo')
             let nextHistory = this.historyList2[`step-${this.step + 1}`]
 
             if (nextHistory && nextHistory.length) {
                 this.currentItem = {}
                 this.currentIndex = null
                 this.step++
-                return this.list2 = nextHistory
+                return this.listOutput = nextHistory
             }
         },
         handleSave() {
-            if(!this.list2.length) return alert('Không có dữ liệu để lưu')
-            let data = this.list2
-            this.$store.dispatch('client/test',data)
+            if (!this.listOutput.length) return alert('Không có dữ liệu để lưu')
+            let data = this.listOutput
+            this.$store.dispatch('client/test', data)
             alert('Lưu thành công')
         },
-        onImport() {
+        handleImport() {
             this.currentIndex = null
             this.currentItem = null
             const jsonString = prompt('Chỉ chấp nhận JSON: ')
@@ -177,16 +184,15 @@ export default {
                 const check = JSON.parse(JSON.parse(jsonString))
                 console.log(typeof check)
                 if (check && typeof check === 'object')
-                    return this.list2 = JSON.parse(JSON.parse(jsonString))
+                    return this.listOutput = JSON.parse(JSON.parse(jsonString))
             } catch (e) {
                 alert('Not valid JSON')
             }
         }
     },
     watch: {
-        list2(newVal, oldVal) {
+        listOutput(newVal, oldVal) {
             if (newVal && newVal.length) {
-                this.dragging = {}
                 const index = newVal.length - 1
 
                 const randomId = Math.random()
@@ -195,7 +201,7 @@ export default {
 
                 temp.id = `id-${randomId}`
 
-                return this.list2[index] = temp
+                return this.listOutput[index] = temp
             }
         }
     },
