@@ -12,7 +12,7 @@
                     <div @click="handleRedo" class="header-btn">Redo</div>
                 </li>
                 <li>
-                    <div class="header-btn">Export</div>
+                    <div @click="handleExport" class="header-btn">Export</div>
                 </li>
                 <li>
                     <div @click="handleImport" class="header-btn">Import</div>
@@ -85,7 +85,7 @@
                         <input v-model="listOutput[currentIndex].props.message" type="text">
                     </div>
                     <div v-if="currentItem.code == 'button'">
-                        <label>Name</label>
+                        <label>Name Button</label>
                         <input v-model="listOutput[currentIndex].props.message" type="text">
                         <label>Alert</label>
                         <input v-model="listOutput[currentIndex].props.alert" type="text">
@@ -97,6 +97,7 @@
 </template>
 <script>
 import draggable from 'vuedraggable'
+import { mapGetters } from 'vuex'
 
 export default {
     name: 'AdminView',
@@ -171,39 +172,56 @@ export default {
         },
         handleSave() {
             if (!this.listOutput.length) return alert('Không có dữ liệu để lưu')
-            let data = this.listOutput
+            let data = JSON.stringify(this.listOutput)
             this.$store.dispatch('client/test', data)
             alert('Lưu thành công')
         },
         handleImport() {
             this.currentIndex = null
             this.currentItem = null
+            this.listOutput = []
             const jsonString = prompt('Chỉ chấp nhận JSON: ')
-            console.log(jsonString)
             try {
                 const check = JSON.parse(JSON.parse(jsonString))
-                console.log(typeof check)
                 if (check && typeof check === 'object')
                     return this.listOutput = JSON.parse(JSON.parse(jsonString))
             } catch (e) {
+                console.log(e)
                 alert('Not valid JSON')
             }
+        },
+        handleExport() {
+            if (!this.listOutput.length) return alert('Không có dữ liệu nào để Export')
+            // let exportData = JSON.stringify(JSON.stringify(this.listOutput))
+
+            let a = document.createElement('a')
+            let json = JSON.stringify(JSON.stringify(this.listOutput))
+            let blob = new Blob([json], { type: 'octet/stream' })
+            let url = window.URL.createObjectURL(blob)
+            a.href = url
+            a.download = 'downloadJson.txt'
+            a.click()
+            window.URL.revokeObjectURL(url)
         }
     },
     watch: {
         listOutput(newVal, oldVal) {
             if (newVal && newVal.length) {
-                const index = newVal.length - 1
-
-                const randomId = Math.random()
-
-                const temp = JSON.parse(JSON.stringify(newVal[index]))
-
-                temp.id = `id-${randomId}`
-
-                return this.listOutput[index] = temp
+                for (let i = 0; i <= newVal.length - 1; i++) {
+                    console.log(i)
+                    const randomId = Math.random()
+                    const temp = JSON.parse(JSON.stringify(newVal[i]))
+                    if(temp.id) return
+                    temp.id = `id-${randomId}`
+                    this.listOutput[i] = temp
+                }
             }
         }
+    },
+    computed: {
+      ...mapGetters({
+          getData: 'client/getTest'
+      })
     },
     mounted() {
         document.addEventListener('mousemove', evt => {

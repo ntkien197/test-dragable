@@ -43,7 +43,7 @@ export default {
     },
     mounted() {
         if (this.getData && this.getData.length) {
-            this.listData = this.getData
+            this.listData = JSON.parse(this.getData)
         }
     },
     computed: {
