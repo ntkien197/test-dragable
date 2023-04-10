@@ -1,4 +1,4 @@
-# dragable
+# Draggable
 
 ## Project setup
 ```

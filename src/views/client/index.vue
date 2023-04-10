@@ -4,22 +4,32 @@
         <div v-if="listData && listData.length">
             <div v-for="(item,index) in listData" :key="item.id" @click="handleClickButton(item)">
                 <template v-if="item.code == 'button'">
-                    <button>
+                    <button style="margin-bottom: 20px">
                         <span>
                             {{ item.props.message || item.name }}
                         </span>
                     </button>
                 </template>
                 <template v-if="item.code == 'paragraph'">
-                    <span>
+                    <span style="margin-bottom: 20px">
                         {{ item.props.message || item.name }}
                     </span>
                 </template>
+                <div v-if="item.code == 'editor'" style="margin-bottom: 20px" v-html="item.props.message"></div>
+                <template v-if="item.code == 'image'">
+                    <div v-if="item.props.previewImage" style="width: 100px;height: 100px;margin: auto;margin-bottom: 20px">
+                        <img style="width: 100%;height: 100%;" :src="item.props.previewImage" alt="" />
+                    </div>
+                </template>
+            </div>
+            <div style="margin-top: 40px">
+                <span>Go to admin config <router-link style="text-decoration: underline" :to="{name:'admin'}">here</router-link></span>
+
             </div>
         </div>
         <div v-else>
-            Không có dữ liệu, vui lòng cấu hình dữ liệu tại
-            <router-link :to="{name: 'admin'}">đây</router-link>
+            No data, please config data
+            <router-link style="text-decoration: underline" :to="{name: 'admin'}">here</router-link>
         </div>
     </div>
 </template>
@@ -28,6 +38,11 @@ import { mapGetters } from 'vuex'
 
 export default {
     name: 'Client',
+    metaInfo() {
+        return {
+            title: 'Consumer'
+        }
+    },
     data() {
         return {
             listData: []

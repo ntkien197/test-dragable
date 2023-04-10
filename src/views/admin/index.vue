@@ -47,11 +47,11 @@
             </div>
             <div class="main-body">
                 <div class="main-body_content">
-                    <div class="">
+                    <div style="margin-right: 40px">
                         <p>Mouse: ({{ mouseCoor.xAxis }} ,{{ mouseCoor.yAxis }})</p>
                         <p>Dragging: {{ dragging.component }}</p>
                         <p>Instance: {{ listOutput.length }}</p>
-                        <p>Config: {{ currentItem || '' }}</p>
+                        <p style="word-break: break-all;">Config: {{ currentItem || '' }}</p>
                     </div>
                     <draggable draggable=".item"
                                class="dragArea list-group"
@@ -74,6 +74,21 @@
                                         {{ i.props.message || i.name }}
                                     </span>
                                 </template>
+                                <template v-if="i.code == 'editor'">
+                                    <span>
+                                        {{ i.name }}
+                                    </span>
+                                    <div v-html="i.props.message"></div>
+                                </template>
+                                <template v-if="i.code == 'image'">
+                                    <span>
+                                        {{ i.name }}
+                                    </span>
+                                    <div v-if="i.props.previewImage"  style="width: 100px;height: 100px">
+                                        <img style="width: 100%;height: 100%" :src="i.props.previewImage" alt="">
+                                    </div>
+                                </template>
+
 
                             </div>
                         </template>
@@ -90,6 +105,11 @@
                         <label>Alert</label>
                         <input v-model="listOutput[currentIndex].props.alert" type="text">
                     </div>
+                    <vue-editor v-if="currentItem.code == 'editor'" v-model="listOutput[currentIndex].props.message"></vue-editor>
+                    <div v-if="currentItem.code == 'image'">
+                        <label>Upload Image</label>
+                        <input @change="onChangeImage" type="file" accept="image/*">
+                    </div>
                 </div>
             </div>
         </div>
@@ -98,11 +118,18 @@
 <script>
 import draggable from 'vuedraggable'
 import { mapGetters } from 'vuex'
+import { VueEditor } from 'vue2-editor'
 
 export default {
     name: 'AdminView',
+    metaInfo() {
+        return {
+            title: 'Admin config'
+        }
+    },
     components: {
-        draggable
+        draggable,
+        VueEditor
     },
     data() {
         return {
@@ -118,6 +145,18 @@ export default {
                     code: 'button',
                     component: 'ElementButton',
                     props: { alert: '', message: '' }
+                },
+                {
+                    name: 'Editor',
+                    code: 'editor',
+                    component: 'ElementEditor',
+                    props: { message: '' }
+                },
+                {
+                    name: 'Upload Image',
+                    code: 'image',
+                    component: 'ElementImage',
+                    props: { previewImage: '' }
                 }
             ],
             listOutput: [],
@@ -126,7 +165,7 @@ export default {
             currentItem: {},
             currentIndex: null,
             historyList2: {},
-            step: 0
+            step: 0,
         }
     },
     methods: {
@@ -179,7 +218,6 @@ export default {
         handleImport() {
             this.currentIndex = null
             this.currentItem = null
-            this.listOutput = []
             const jsonString = prompt('Chỉ chấp nhận JSON: ')
             try {
                 const check = JSON.parse(JSON.parse(jsonString))
@@ -202,6 +240,24 @@ export default {
             a.download = 'downloadJson.txt'
             a.click()
             window.URL.revokeObjectURL(url)
+        },
+        onChangeImage(e) {
+            console.log(e)
+            const file = e.target.files[0]
+            let reader = new FileReader()
+            let vm = this
+            const allowFileTypes = ['jpg', 'png']
+            reader.onload = (e) => {
+                let extension = file.name.split('.').pop().toLowerCase()
+                const isSuccess = allowFileTypes.indexOf(extension) > -1
+                if (!isSuccess) return alert('Chỉ nhận file có đuôi png,jpg')
+                let fileSize = file['size']
+                let allowMaxImageSize = 20 * (1024 * 1024)
+                if (fileSize > allowMaxImageSize) return alert('File không được lớn hơn 20mb')
+
+                vm.listOutput[vm.currentIndex].props.previewImage = e.target.result
+            }
+            reader.readAsDataURL(file)
         }
     },
     watch: {
@@ -211,7 +267,7 @@ export default {
                     console.log(i)
                     const randomId = Math.random()
                     const temp = JSON.parse(JSON.stringify(newVal[i]))
-                    if(temp.id) return
+                    // if(temp.id) return
                     temp.id = `id-${randomId}`
                     this.listOutput[i] = temp
                 }
@@ -219,15 +275,18 @@ export default {
         }
     },
     computed: {
-      ...mapGetters({
-          getData: 'client/getTest'
-      })
+        ...mapGetters({
+            getData: 'client/getTest'
+        })
     },
     mounted() {
         document.addEventListener('mousemove', evt => {
             const { clientX, clientY } = evt
             return this.mouseCoor = { xAxis: clientX, yAxis: clientY }
         })
+        if(this.getData) {
+            this.listOutput = JSON.parse(this.getData)
+        }
     }
 }
 </script>
